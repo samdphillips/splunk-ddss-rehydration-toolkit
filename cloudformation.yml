@@ -31,7 +31,7 @@ Resources:
   splunkInstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub "${AWS::AccountId}-splunk-${service}-securityGroup"
+      GroupName: !Sub "${service}-securityGroup"
       GroupDescription: !Sub "Security group for ${service} server"
       VpcId: !Ref "vpcID"
       SecurityGroupIngress:
@@ -42,7 +42,7 @@ Resources:
           ToPort: 8000
       Tags:
       - Key: "Name"
-        Value: !Sub "${AWS::AccountId}-splunk-${service}-securityGroup"
+        Value: !Sub "${service}-securityGroup"
       - Key: service
         Value: !Ref service
       - Key: contact
@@ -64,7 +64,7 @@ Resources:
               SSEAlgorithm: AES256
       LifecycleConfiguration:
         Rules:
-            - Id: !Sub "${AWS::AccountId}-splunk-${service}-bucket-cleanupPolicy"
+            - Id: !Sub "${service}-bucket-cleanupPolicy"
               AbortIncompleteMultipartUpload:
                 DaysAfterInitiation: 1
               Status: Enabled
