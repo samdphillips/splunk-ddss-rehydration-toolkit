@@ -48,6 +48,36 @@ Resources:
       - Key: contact
         Value: !Ref contact
 
+  splunkBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::AccountId}-splunk-${service}-bucket"
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+            - Id: !Sub "${AWS::AccountId}-splunk-${service}-bucket-cleanupPolicy"
+              AbortIncompleteMultipartUpload:
+                DaysAfterInitiation: 1
+              Status: Enabled
+      Tags:
+      - Key: "Name"
+        Value: !Sub "${AWS::AccountId}-splunk-${service}-bucket"
+      - Key: service
+        Value: !Ref service
+      - Key: contact
+        Value: !Ref contact
+
 Outputs:
   splunkInstanceSecurityGroupID:
     Value: !Ref splunkInstanceSecurityGroup
+  splunkBucketName:
+    Value: !Ref splunkBucket
