@@ -1,0 +1,53 @@
+---
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation template to create AWS resoruces for the Splunk DDSS Restore Toolkit.
+
+Parameters:
+
+  service:
+    Type: String
+    Description: Service name used in tagging AWS resources.
+    Default: splunk-ddss-restore-tooklit
+
+  stage:
+    Type: String
+    Description: Used to distinguish between stages of an environment (dev, test, prod, stage, etc).  Only used in AWS resource tagging.
+    Default: dev
+
+  contact:
+    Description: Used to identify a contact for the resources created in this stack.  Only used in AWS resource tagging.  As an example, this could be an email address or username.
+    Type: String
+    Default: ""
+
+  vpcID:
+    Description: VPC the EC2 instance will reside in.
+    Type: AWS::EC2::VPC::Id
+
+
+Resources:
+
+# Resources for EC2 instance
+  splunkInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${AWS::AccountId}-splunk-${service}-securityGroup"
+      GroupDescription: !Sub "Security group for ${service} server"
+      VpcId: !Ref "vpcID"
+      SecurityGroupIngress:
+        - CidrIp: "0.0.0.0/0"
+          Description: "Splunk UI"
+          FromPort: 8000
+          IpProtocol: tcp
+          ToPort: 8000
+      Tags:
+      - Key: "Name"
+        Value: !Sub "${AWS::AccountId}-splunk-${service}-securityGroup"
+      - Key: service
+        Value: !Ref service
+      - Key: contact
+        Value: !Ref contact
+
+Outputs:
+  splunkInstanceSecurityGroupID:
+    Value: !Ref splunkInstanceSecurityGroup
