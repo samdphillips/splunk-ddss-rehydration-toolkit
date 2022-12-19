@@ -104,7 +104,14 @@ Resources:
           - s3:Get*
           - s3:Put*
           - s3:List*
+          - s3:Delete*
           Resource: !Sub "arn:aws:s3:::${AWS::AccountId}-splunk-${service}-bucket/*"
+        - Effect: Allow
+          Action:
+          - s3:ListAllMyBuckets
+          - s3:HeadBucket
+          - s3:ListBucket
+          Resource: !Sub "arn:aws:s3:::${AWS::AccountId}-splunk-${service}-bucket/"
       ManagedPolicyName: !Sub "${service}-instancePolicy"
 
   splunkInstanceRole:
