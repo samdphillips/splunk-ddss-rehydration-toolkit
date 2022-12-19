@@ -76,8 +76,43 @@ Resources:
       - Key: contact
         Value: !Ref contact
 
+  splunkInstancePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:Get*
+          - s3:Put*
+          - s3:List*
+          Resource: !Sub "arn:aws:s3:::${AWS::AccountId}-splunk-${service}-bucket/*"
+      ManagedPolicyName: !Sub "${service}-instancePolicy"
+
+  splunkInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service: "ec2.amazonaws.com"
+          Action:
+            - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref splunkInstancePolicy
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      RoleName: !Sub "${service}-instanceRole"
+
 Outputs:
   splunkInstanceSecurityGroupID:
     Value: !Ref splunkInstanceSecurityGroup
-  splunkBucketName:
-    Value: !Ref splunkBucket
+  splunkBucketArn:
+    Value: !GetAtt splunkBucket.Arn
+  splunkInsancePolicyID:
+    Value: !Ref splunkInstancePolicy
+  splunkInstanceRoleArn:
+    Value: !GetAtt splunkInstanceRole.Arn
