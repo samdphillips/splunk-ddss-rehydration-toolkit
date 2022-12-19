@@ -24,6 +24,23 @@ Parameters:
     Description: VPC the EC2 instance will reside in.
     Type: AWS::EC2::VPC::Id
 
+  splunkAMIImageID:
+    Type: "AWS::EC2::Image::Id"
+    Description: "The Splunk AMI that will be used when setting up the Splunk EC2 instance."
+
+  splunkInstanceType:
+    Type: String
+    Description: "Instance type and size of the Splunk EC2 instance."
+    Default: "c6i.2xlarge"
+
+  splunkInstanceKeypair:
+    Type: String
+    Description: "Name of the EC2 keypair to set up on the Splunk server."
+
+  splunkInstanceSubnetID:
+    Description: "Subnet that will be used for Splunk EC2 instance."
+    Type: AWS::EC2::Subnet::Id
+
 
 Resources:
 
@@ -107,6 +124,43 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
       RoleName: !Sub "${service}-instanceRole"
 
+  splunkInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref splunkInstanceRole
+      InstanceProfileName: !Sub "${service}-instanceProfile"
+
+  splunkInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            DeleteOnTermination: true
+            Encrypted: True
+            VolumeSize: 200
+            VolumeType: "gp3"
+      IamInstanceProfile: !Ref splunkInstanceProfile
+      ImageId: !Ref splunkAMIImageID
+      InstanceType: !Ref splunkInstanceType
+      KeyName: !Ref splunkInstanceKeypair
+      Monitoring: false
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeleteOnTermination: true
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref splunkInstanceSecurityGroup
+          SubnetId: !Ref splunkInstanceSubnetID
+      Tags:
+      - Key: "Name"
+        Value: !Sub "${service}-instance"
+      - Key: service
+        Value: !Ref service
+      - Key: contact
+        Value: !Ref contact
+
 Outputs:
   splunkInstanceSecurityGroupID:
     Value: !Ref splunkInstanceSecurityGroup
@@ -116,3 +170,7 @@ Outputs:
     Value: !Ref splunkInstancePolicy
   splunkInstanceRoleArn:
     Value: !GetAtt splunkInstanceRole.Arn
+  splunkInstanceProfileArn:
+    Value: !GetAtt splunkInstanceProfile.Arn
+  splunkInstanceID:
+    Value: !Ref splunkInstance
