@@ -41,6 +41,13 @@ Parameters:
     Description: "Subnet that will be used for Splunk EC2 instance."
     Type: AWS::EC2::Subnet::Id
 
+  splunkInstanceEBSVolumeSize:
+    Type: Number
+    Description: "Size of the EBS volume Splunk instance will launch with in GB."
+    Default: 500
+    MinValue: 50
+    MaxValue: 64000
+
 
 Resources:
 
@@ -146,7 +153,7 @@ Resources:
           Ebs:
             DeleteOnTermination: true
             Encrypted: True
-            VolumeSize: 200
+            VolumeSize: !Ref splunkInstanceEBSVolumeSize
             VolumeType: "gp3"
       IamInstanceProfile: !Ref splunkInstanceProfile
       ImageId: !Ref splunkAMIImageID
