@@ -1,14 +1,14 @@
 ---
 
 AWSTemplateFormatVersion: "2010-09-09"
-Description: CloudFormation template to create AWS resources for the Splunk DDSS Restore Toolkit.
+Description: Reference CloudFormation template for Splunk DDSS Rehydration Toolkit permissions.
 
 Parameters:
 
   service:
     Type: String
     Description: Service name used in tagging AWS resources.
-    Default: splunk-ddss-restore-tooklit
+    Default: splunk-ddss-rehydration-tooklit-sample
 
   contact:
     Description: Used to identify a contact for the resources created in this stack.  Only used in AWS resource tagging.  As an example, this could be an email address or username.
