@@ -1,4 +1,4 @@
-# DDSS Restore Toolkit
+# DDSS Rehydration Toolkit
 
 This toolkit is intended to help customers of [Splunk Cloud](https://www.splunk.com/en_us/products/splunk-cloud-platform.html) utilizing [Dynamic Data Self-Storage (DDSS)](https://docs.splunk.com/Documentation/SplunkCloud/latest/Service/SplunkCloudservice#Dynamic_Data_Self-Storage_.28DDSS.29) for archived data.  The goal of this toolkit is to simplify the process of
 1. Creating a Splunk Enterprise server to host and search rehydrated DDSS 
@@ -6,7 +6,7 @@ This toolkit is intended to help customers of [Splunk Cloud](https://www.splunk.
 
 There are two sets of instructions:
 1. Deployment Instructions: This includes deploying the AWS CloudFormation template to an AWS account that will create the Splunk Enterprise server to rehydrate and search the DDSS data.
-2. Restore Instructions: This includes the instructions needed to copy the DDSS data from S3, rehydrate that data, and make that data searchable.
+2. Rehydration Instructions: This includes the instructions needed to copy the DDSS data from S3, rehydrate that data, and make that data searchable.
 
 
 
@@ -54,7 +54,7 @@ The first set of steps to using the toolkit is to deploy the CloudFormation temp
 11. (Optional) [Add any additional user accounts](https://docs.splunk.com/Documentation/Splunk/latest/Security/Addandeditusers) for users that will need access to the rehydrated data, [configure LDAP authentication](https://docs.splunk.com/Documentation/Splunk/latest/Security/SetupuserauthenticationwithLDAP) and/or [configure SAML authentication](https://docs.splunk.com/Documentation/Splunk/latest/Security/HowSAMLSSOworks).
 
 
-## Restore Instructions
+## Rehydration Instructions
 The second set of steps to using the toolkit is to perform a data copy, rehydrate the data, and make the data searchable in the Splunk Enterprise instance that was created in the Deployment Instructions.
 
 1. Using [AWS Systems Manager Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html), connect to the Splunk Enterprise instance that was deployed in the Deployment Instructions, and assume the root user account
@@ -71,13 +71,13 @@ The second set of steps to using the toolkit is to perform a data copy, rehydrat
   - Example to rehydrate all of the buckets in the directory: `for d in /opt/splunk/ddss-rehydrate/* ; do (/opt/splunk/bin/splunk rebuild "$d"); done`
 7.  Modify `indexes.conf`, adding a new index that points the new index's thawedDB directory to the rehydrated data.
   - Make sure to set retention settings such as `frozenTimePeriodInSecs` and `maxTotalDataSizeMB` to a high value so Splunk doesn't re-freeze the data.
-  - It's easit to edit the `/opt/splunk/etc/system/local/indexes.conf` file.
+  - It's easiest to edit the `/opt/splunk/etc/system/local/indexes.conf` file.
   - Example:
       ```
       [ddss-rehydrate]
       homePath = /opt/splunk/var/lib/splunk/$_index_name/db
       coldPath = /opt/splunk/var/lib/splunk/$_index_name/colddb
-      thawedPath = /opt/splunk/restore-ddss-demo
+      thawedPath = /opt/splunk/ddss-rehydrate/
       frozenTimePeriodInSecs = 4294967295
       maxTotalDataSizeMB = 4294967295
       ```
