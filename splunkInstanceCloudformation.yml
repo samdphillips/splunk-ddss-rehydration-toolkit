@@ -1,0 +1,141 @@
+---
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation template to create AWS resources for the Splunk DDSS Rehydration Toolkit.
+
+Parameters:
+
+  service:
+    Type: String
+    Description: Service name used in tagging AWS resources.
+    Default: splunk-ddss-rehydration-tooklit
+
+  stage:
+    Type: String
+    Description: Used to distinguish between stages of an environment (dev, test, prod, stage, etc).  Only used in AWS resource tagging.
+    Default: dev
+
+  contact:
+    Description: Used to identify a contact for the resources created in this stack.  Only used in AWS resource tagging.  As an example, this could be an email address or username.
+    Type: String
+    Default: ""
+
+  vpcID:
+    Description: VPC the EC2 instance will reside in.
+    Type: AWS::EC2::VPC::Id
+
+  amiID:
+    Type: "AWS::EC2::Image::Id"
+    Description: "The Splunk AMI that will be used when setting up the Splunk EC2 instance."
+
+  instanceType:
+    Type: String
+    Description: "Instance type and size of the Splunk EC2 instance."
+    Default: "c6i.2xlarge"
+
+  securityGroupIngress:
+    Type: String
+    Description: "CIDR range that will be accessign Splunk.  Leave as the default to allow all access."
+    Default: "0.0.0.0/0"
+
+  subnetID:
+    Description: "Subnet that will be used for Splunk EC2 instance."
+    Type: AWS::EC2::Subnet::Id
+
+  ebsVolumeSize:
+    Type: Number
+    Description: "Size of the EBS volume Splunk instance will launch with in GB.  Should be 3.5x the size of the DDSS data in S3."
+    MinValue: 50
+    MaxValue: 64000
+
+  dataAcessPolicyARN:
+    Type: String
+    Description: "IAM Policy ARN the Splunk server will use to access the S3 bucket the DDSS data is in, and any KMS keys for decrypting that data."
+
+Resources:
+
+# Resources for EC2 instance
+  instanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${service}-securityGroup"
+      GroupDescription: !Sub "Security group for ${service} server"
+      VpcId: !Ref "vpcID"
+      SecurityGroupIngress:
+        - CidrIp: !Ref securityGroupIngress
+          Description: "Splunk UI"
+          FromPort: 8000
+          IpProtocol: tcp
+          ToPort: 8000
+      Tags:
+      - Key: "Name"
+        Value: !Sub "${service}-securityGroup"
+      - Key: service
+        Value: !Ref service
+      - Key: contact
+        Value: !Ref contact
+
+  instanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service: "ec2.amazonaws.com"
+          Action:
+            - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+        - !Ref dataAcessPolicyARN
+      RoleName: !Sub "${service}-instanceRole"
+
+  instanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref instanceRole
+      InstanceProfileName: !Sub "${service}-instanceProfile"
+
+  instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            DeleteOnTermination: true
+            Encrypted: True
+            VolumeSize: !Ref ebsVolumeSize
+            VolumeType: "gp3"
+      IamInstanceProfile: !Ref instanceProfile
+      ImageId: !Ref amiID
+      InstanceType: !Ref instanceType
+      Monitoring: false
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeleteOnTermination: true
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref instanceSecurityGroup
+          SubnetId: !Ref subnetID
+      Tags:
+      - Key: "Name"
+        Value: !Sub "${service}-instance"
+      - Key: service
+        Value: !Ref service
+      - Key: contact
+        Value: !Ref contact
+
+Outputs:
+  instanceSecurityGroupID:
+    Value: !Ref instanceSecurityGroup
+  instanceRoleARN:
+    Value: !GetAtt instanceRole.Arn
+  instanceProfileArn:
+    Value: !GetAtt instanceProfile.Arn
+  instanceID:
+    Value: !Ref instance
+  instancePublicIP:
+    Value: !GetAtt instance.PublicIp
