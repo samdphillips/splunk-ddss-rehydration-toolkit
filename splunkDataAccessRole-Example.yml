@@ -1,0 +1,74 @@
+---
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Reference CloudFormation template for Splunk DDSS Rehydration Toolkit permissions.
+
+Parameters:
+
+  service:
+    Type: String
+    Description: Service name used in tagging AWS resources.
+    Default: splunk-ddss-rehydration-tooklit-sample
+
+  contact:
+    Description: Used to identify a contact for the resources created in this stack.  Only used in AWS resource tagging.  As an example, this could be an email address or username.
+    Type: String
+    Default: ""
+
+Resources:
+  splunkInstancePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:Get*
+          - s3:Put*
+          - s3:List*
+          - s3:Delete*
+          Resource: !Sub "arn:aws:s3:::contoso-94q7su9iuudm-ddss-bucket/*"
+        - Effect: Allow
+          Action:
+          - s3:ListAllMyBuckets
+          - s3:HeadBucket
+          - s3:ListBucket
+          Resource: !Sub "arn:aws:s3:::contoso-94q7su9iuudm-ddss-bucket/"
+        - Effect: Allow
+          Action:
+          - "kms:Encrypt"
+          - "kms:Decrypt"
+          - "kms:ReEncrypt*"
+          - "kms:GenerateDataKey*"
+          - "kms:DescribeKey"
+          Resource: "*"
+      ManagedPolicyName: !Sub "${service}-instance-data-access-policy"
+
+  splunkBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "contoso-94q7su9iuudm-ddss-bucket"
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+            - Id: !Sub "${service}-bucket-cleanupPolicy"
+              AbortIncompleteMultipartUpload:
+                DaysAfterInitiation: 1
+              Status: Enabled
+      Tags:
+      - Key: "Name"
+        Value: !Sub "contoso-94q7su9iuudm-ddss-bucket"
+      - Key: service
+        Value: !Ref service
+      - Key: contact
+        Value: !Ref contact
